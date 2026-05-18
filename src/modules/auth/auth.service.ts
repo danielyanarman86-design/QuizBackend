@@ -64,7 +64,6 @@ export class AuthService {
     if (user.status === UserStatus.BANNED) throw new UnauthorizedException('Account banned');
 
     const valid = await bcrypt.compare(dto.password, user.password);
-    console.log('LOGIN DEBUG:', { email: dto.email, hashLen: user.password?.length, valid });
     if (!valid) throw new UnauthorizedException('Invalid credentials');
 
     return this.generateTokenResponse(user);

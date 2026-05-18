@@ -1,7 +1,6 @@
 import {
   Controller, Post, Get, Body, UseGuards, Req, Res, Query,
 } from '@nestjs/common';
-import * as bcrypt from 'bcryptjs';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -19,12 +18,6 @@ export class AuthController {
   @ApiOperation({ summary: 'Register new user' })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
-  }
-
-  @Get('hash')
-  async getHash(@Query('p') p: string) {
-    const hash = await bcrypt.hash(p, 10);
-    return { hash };
   }
 
   @Post('login')
