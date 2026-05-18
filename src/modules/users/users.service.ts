@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { User, UserRole, Locale } from './entities/user.entity';
 import { Attempt, AttemptStatus } from '../attempts/entities/attempt.entity';
 import { QuizAssignment } from '../assignments/entities/assignment.entity';
