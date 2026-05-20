@@ -7,9 +7,10 @@ import { Attempt } from '../attempts/entities/attempt.entity';
 import { QuizAssignment } from '../assignments/entities/assignment.entity';
 import { Class } from '../classes/entities/class.entity';
 import { Quiz } from '../quizzes/entities/quiz.entity';
+import { LiveSessionResult } from '../sessions/entities/live-session-result.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Attempt, QuizAssignment, Class, Quiz])],
+  imports: [TypeOrmModule.forFeature([User, Attempt, QuizAssignment, Class, Quiz, LiveSessionResult])],
   controllers: [UsersController],
   providers: [UsersService],
   exports: [UsersService],

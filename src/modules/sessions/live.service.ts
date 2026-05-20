@@ -21,6 +21,7 @@ function generatePin(): string {
 export interface PlayerState {
   socketId: string;
   name: string;
+  userId?: string;
   score: number;
   answers: Record<string, string[]>;
 }
@@ -98,7 +99,7 @@ export class LiveService {
     return rooms.get(pin);
   }
 
-  addPlayer(pin: string, socketId: string, name: string) {
+  addPlayer(pin: string, socketId: string, name: string, userId?: string) {
     const room = rooms.get(pin);
     if (!room) return null;
 
@@ -109,10 +110,11 @@ export class LiveService {
     const existing = [...room.players.values()].find(p => p.name === name);
     if (existing) {
       existing.socketId = socketId;
+      if (userId) existing.userId = userId;
       room.players.delete(socketId);
       room.players.set(socketId, existing);
     } else {
-      room.players.set(socketId, { socketId, name, score: 0, answers: {} });
+      room.players.set(socketId, { socketId, name, userId, score: 0, answers: {} });
     }
     return room;
   }
@@ -208,6 +210,7 @@ export class LiveService {
       return this.resultsRepo.create({
         sessionId: room.session.id,
         playerName: entry.name,
+        userId: player?.userId ?? undefined,
         score: entry.score,
         rank: entry.rank,
         correctAnswers,

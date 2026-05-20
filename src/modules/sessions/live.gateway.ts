@@ -7,10 +7,19 @@ import { LiveService } from './live.service';
 
 @WebSocketGateway({
   cors: {
-    origin: [
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-      process.env.ADMIN_URL || 'http://localhost:3002',
-    ],
+    origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
+      const allowed = [
+        process.env.FRONTEND_URL || 'http://localhost:3000',
+        process.env.ADMIN_URL || 'http://localhost:3001',
+        'http://localhost:3000',
+        'http://localhost:3001',
+      ];
+      if (!origin || allowed.includes(origin) || origin.endsWith('.railway.app') || origin.endsWith('.up.railway.app')) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS blocked: ${origin}`));
+      }
+    },
     credentials: true,
   },
   namespace: '/live',
@@ -116,8 +125,8 @@ export class LiveGateway implements OnGatewayDisconnect {
 
   // PLAYER: join room
   @SubscribeMessage('player:join')
-  handleJoin(@MessageBody() data: { pin: string; name: string }, @ConnectedSocket() client: Socket) {
-    const room = this.liveService.addPlayer(data.pin, client.id, data.name);
+  handleJoin(@MessageBody() data: { pin: string; name: string; userId?: string }, @ConnectedSocket() client: Socket) {
+    const room = this.liveService.addPlayer(data.pin, client.id, data.name, data.userId);
     if (!room) {
       client.emit('error', { message: 'Room not found' });
       return;

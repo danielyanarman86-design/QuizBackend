@@ -7,6 +7,7 @@ import { Attempt, AttemptStatus } from '../attempts/entities/attempt.entity';
 import { QuizAssignment } from '../assignments/entities/assignment.entity';
 import { Class } from '../classes/entities/class.entity';
 import { Quiz } from '../quizzes/entities/quiz.entity';
+import { LiveSessionResult } from '../sessions/entities/live-session-result.entity';
 
 export interface UpdateUserDto {
   firstName?: string;
@@ -22,6 +23,7 @@ export class UsersService {
     @InjectRepository(QuizAssignment) private assignRepo: Repository<QuizAssignment>,
     @InjectRepository(Class) private classRepo: Repository<Class>,
     @InjectRepository(Quiz) private quizRepo: Repository<Quiz>,
+    @InjectRepository(LiveSessionResult) private liveResultsRepo: Repository<LiveSessionResult>,
   ) {}
 
   async findById(id: string) {
@@ -162,10 +164,21 @@ export class UsersService {
   }
 
   async getMyStats(userId: string) {
-    const attempts = await this.attemptsRepo.find({
-      where: { studentId: userId, status: AttemptStatus.COMPLETED },
-      relations: ['assignment', 'assignment.quiz'],
-    });
+    const [attempts, liveResults] = await Promise.all([
+      this.attemptsRepo.find({
+        where: { studentId: userId, status: AttemptStatus.COMPLETED },
+        relations: ['assignment', 'assignment.quiz'],
+      }),
+      this.liveResultsRepo
+        .createQueryBuilder('r')
+        .leftJoinAndSelect('r.session', 'session')
+        .leftJoinAndSelect('session.assignment', 'assignment')
+        .leftJoinAndSelect('assignment.quiz', 'quiz')
+        .where('r.userId = :userId', { userId })
+        .orderBy('session.finishedAt', 'DESC')
+        .limit(20)
+        .getMany(),
+    ]);
 
     const totalAttempts = attempts.length;
     const avgScore = totalAttempts
@@ -175,18 +188,32 @@ export class UsersService {
       ? Math.max(...attempts.map(a => a.totalPoints ? Math.round((a.score / a.totalPoints) * 100) : 0))
       : 0;
 
+    const recentLive = liveResults.map(r => ({
+      id: r.id,
+      type: 'live' as const,
+      quizTitle: (r.session as any)?.assignment?.quiz?.title ?? 'Live Quiz',
+      score: r.score,
+      rank: r.rank,
+      correctAnswers: r.correctAnswers,
+      totalQuestions: r.totalQuestions,
+      pin: r.session?.pin,
+      finishedAt: r.session?.finishedAt,
+    }));
+
     return {
       totalAttempts,
       avgScore,
       bestScore,
       recentAttempts: attempts.slice(-10).reverse().map(a => ({
         id: a.id,
+        type: 'assignment' as const,
         quizTitle: a.assignment?.quiz?.title ?? 'Unknown',
         score: a.score,
         totalPoints: a.totalPoints,
         pct: a.totalPoints ? Math.round((a.score / a.totalPoints) * 100) : 0,
         finishedAt: a.finishedAt,
       })),
+      recentLive,
     };
   }
 }

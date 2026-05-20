@@ -18,6 +18,9 @@ export class LiveSessionResult {
   @Column()
   playerName: string;
 
+  @Column({ nullable: true })
+  userId: string;
+
   @Column({ default: 0 })
   score: number;
 
